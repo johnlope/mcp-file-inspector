@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 
 public class PathValidator
 {
-    private readonly Dictionary<string, string> _allowedRoots;   
+    private readonly Dictionary<string, string> _allowedRoots;
 
     public PathValidator(IConfiguration configuration)
     {
@@ -12,10 +12,13 @@ public class PathValidator
 
     public string GetRepositoryRoot(string repositoryName)
     {
-        if(string.IsNullOrEmpty(repositoryName))
-            throw new ArgumentException("Repository name cannot be null or empty.", nameof(repositoryName));        
-        
-        if(!_allowedRoots.ContainsKey(repositoryName))
+        if (string.IsNullOrEmpty(repositoryName))
+            throw new ArgumentException("Repository name cannot be null or empty.", nameof(repositoryName));
+
+        if (_allowedRoots == null || _allowedRoots.Count == 0)
+            throw new UnauthorizedAccessException("No allowed repositories are configured.");
+
+        if (!_allowedRoots.ContainsKey(repositoryName))
             throw new UnauthorizedAccessException($"Repository not allowed: {repositoryName}");
 
         return _allowedRoots[repositoryName];
