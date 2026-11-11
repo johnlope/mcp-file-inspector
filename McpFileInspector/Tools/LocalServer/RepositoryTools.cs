@@ -107,7 +107,7 @@ public class RepositoryTools : FileInspectorBaseTools
 
     [McpServerTool]
     [Description("Searches for content inside files within a local repository.")]
-    public async Task<McpToolResponse<IReadOnlyList<string>>> SearchContentAsync(
+    public async Task<McpToolResponse<IReadOnlyList<SearchResult>>> SearchContentAsync(
         [Description("Name of the repository to access")]
         string repositoryName,
         [Description("Search pattern for files (e.g., *.txt, Program.cs, *Service.cs, Program.*)")]
@@ -135,12 +135,12 @@ public class RepositoryTools : FileInspectorBaseTools
             if (!Directory.Exists(repositoryRoot))
                 throw new DirectoryNotFoundException("Directory not found.");
 
-            IReadOnlyList<string> files = await _fileService.SearchContentAsync(repositoryRoot, searchPattern, content, mode: modeCast);
+            IReadOnlyList<SearchResult> files = await _fileService.SearchContentAsync(repositoryRoot, searchPattern, content, mode: modeCast);
             return ProcessSuccessResponse(files);
         }
         catch (Exception ex)
         {
-            return ProcessFailedResponse<IReadOnlyList<string>>(ex);
+            return ProcessFailedResponse<IReadOnlyList<SearchResult>>(ex);
         }
     }
 }

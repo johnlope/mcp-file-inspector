@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using System.IO.Enumeration;
 using System.Text.RegularExpressions;
 using McpFileInspector.Model;
+using System.Collections.Concurrent;
 
 public class FileService
 {
@@ -10,6 +11,8 @@ public class FileService
     private readonly HashSet<string> _excludedExtensions;
     private readonly HashSet<string> _excludedFiles;
     private readonly int? _maxDegreeOfParallelism;
+
+    private readonly int _maxFileSize;
 
     public FileService(IConfiguration configuration)
     {
@@ -36,13 +39,13 @@ public class FileService
 
         _maxDegreeOfParallelism = configuration.GetValue<int?>("McpSettings:MaxDegreeOfParallelism");
 
+        _maxFileSize = configuration.GetValue<int>("McpSettings:MaxFileSize");
+
     }
 
-    public async Task<IReadOnlyList<string>> SearchContentAsync(string repositoryRoot, string searchPattern, string searchTerm,
+    public async Task<IReadOnlyList<SearchResult>> SearchContentAsync(string repositoryRoot, string searchPattern, string searchTerm,
         SearchMode mode = SearchMode.Text)
     {
-        if (string.IsNullOrEmpty(searchTerm))
-            return new List<string> { "Search text for search cannot be empty." };
 
         if (string.IsNullOrWhiteSpace(searchTerm) ||
             searchTerm.Length < 2 ||
@@ -62,21 +65,20 @@ public class FileService
         }
 
         var searchRegex = new Regex(searchTerm);
-        return await SearchRegexAsync(repositoryRoot,files, searchRegex);
+        return await SearchRegexAsync(repositoryRoot, files, searchRegex);
     }
 
     /// <summary>
     /// Busca texto plano en una lista prefiltrada de archivos de forma asíncrona y paralela.
     /// </summary>
-    private async Task<IReadOnlyList<string>> SearchTextAsync(
+    private async Task<IReadOnlyList<SearchResult>> SearchTextAsync(
         string repositoryRoot,
         IEnumerable<string> filePaths,
         string searchTerm,
         bool caseSensitive = false,
         CancellationToken cancellationToken = default)
     {
-        //  var results = new ConcurrentBag<SearchResult>();
-        List<string> results = new List<string>();
+        var results = new ConcurrentBag<SearchResult>();
         var comparison = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
 
         var options = new ParallelOptions
@@ -93,15 +95,19 @@ public class FileService
             try
             {
                 int lineNumber = 0;
-                filePath = Path.Combine(repositoryRoot, filePath);
+                string fullPath = Path.Combine(repositoryRoot, filePath);
                 // File.ReadLinesAsync lee en streaming línea por línea sin cargar todo el archivo en memoria
-                await foreach (var line in File.ReadLinesAsync(filePath, ct))
+                await foreach (var line in File.ReadLinesAsync(fullPath, ct))
                 {
                     lineNumber++;
                     if (line.Contains(searchTerm, comparison))
                     {
-                        // results.Add(new SearchResult(filePath, lineNumber, line.Trim()));
-                        results.Add($"{filePath}:{lineNumber}:{line.Trim()}");
+                        results.Add(new()
+                        {
+                            File = filePath,
+                            Line = lineNumber,
+                            Content = line.Trim()
+                        });
                     }
                 }
             }
@@ -116,21 +122,20 @@ public class FileService
         });
 
         // Ordenar los resultados por ruta de archivo y número de línea para mantener orden
-        //return results.OrderBy(r => r.FilePath).ThenBy(r => r.LineNumber).ToList();
-        return results;
+        return results.OrderBy(r => r.File).ThenBy(r => r.Line).ToList();
     }
 
     /// <summary>
     /// Versión alternativa si necesitas buscar usando Expresiones Regulares (Regex) en lugar de texto plano.
     /// </summary>
-    private async Task<IReadOnlyList<string>> SearchRegexAsync(
+    private async Task<IReadOnlyList<SearchResult>> SearchRegexAsync(
         string repositoryRoot,
         IEnumerable<string> filePaths,
         Regex regexPattern,
         CancellationToken cancellationToken = default)
     {
-        //   var results = new ConcurrentBag<SearchResult>();
-        List<string> results = new List<string>();
+        var results = new ConcurrentBag<SearchResult>();
+
 
         var options = new ParallelOptions
         {
@@ -145,14 +150,18 @@ public class FileService
             try
             {
                 int lineNumber = 0;
-                filePath = Path.Combine(repositoryRoot, filePath);
-                await foreach (var line in File.ReadLinesAsync(filePath, ct))
+                string fullPath = Path.Combine(repositoryRoot, filePath);
+                await foreach (var line in File.ReadLinesAsync(fullPath, ct))
                 {
                     lineNumber++;
                     if (regexPattern.IsMatch(line))
                     {
-                        // results.Add(new SearchResult(filePath, lineNumber, line.Trim()));
-                        results.Add($"{filePath}:{lineNumber}:{line.Trim()}");
+                        results.Add(new()
+                        {
+                            File = filePath,
+                            Line = lineNumber,
+                            Content = line.Trim()
+                        });
                     }
                 }
             }
@@ -166,8 +175,7 @@ public class FileService
             }
         });
 
-        //return results.OrderBy(r => r.FilePath).ThenBy(r => r.LineNumber).ToList();
-        return results;
+        return results.OrderBy(r => r.File).ThenBy(r => r.Line).ToList();
     }
 
 
@@ -176,7 +184,12 @@ public class FileService
         if (!File.Exists(fullPath))
             return "File not found.";
 
-        return File.ReadAllText(fullPath);
+        var content = File.ReadAllText(fullPath);
+
+        if (content.Length > _maxFileSize)
+            content = content[.._maxFileSize] + "\n[Content truncated]";
+
+        return content.Trim();
     }
 
     public IReadOnlyList<string> SearchFiles(string repositoryRoot, string searchPattern)
@@ -199,7 +212,7 @@ public class FileService
         });
 
 
-        return [.. files];;
+        return [.. files];
     }
 
     public IReadOnlyList<string> GetFilteredFiles(string requestedPath)
