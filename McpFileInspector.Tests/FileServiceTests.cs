@@ -1,6 +1,4 @@
-using System;
 using McpFileInspector.Tests.Fixtures;
-using Xunit;
 
 namespace McpFileInspector.Tests;
 
@@ -24,20 +22,28 @@ public class FileServiceTests
     public void GetFilteredFilesTest()
     {
         var files = _fileService.GetFilteredFiles("C:/GHT/Test/");
-        Assert.True(files.Length > 0);         
+        Assert.True(files.Count > 0);
     }
 
     [Fact]
     public void InvalidPathTest()
     {
-        try 
+        try
         {
-        var files = _fileService.GetFilteredFiles("D:/GHT/");
-        }   
+            var files = _fileService.GetFilteredFiles("D:/GHT/");
+        }
         catch (System.IO.DirectoryNotFoundException ex)
         {
             Assert.NotNull(ex);
-        }                
+        }
     }
-    
+
+    [Fact]
+    public async Task SearchContentTest()
+    {
+        var files = await _fileService.SearchContentAsync("C:/GHT/GHT-Reviews", "*.cs", "using Microsoft.AspNetCore.Http", Model.SearchMode.Text);
+        Assert.NotNull(files);       
+        Assert.True(files.Count > 0);
+    }
+
 }
