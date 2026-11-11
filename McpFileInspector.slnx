@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="McpFileInspector.Tests/McpFileInspector.Tests.csproj" />
+  <Project Path="McpFileInspector/McpFileInspector.csproj" />
+</Solution>
