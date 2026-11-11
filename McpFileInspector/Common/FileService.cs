@@ -3,6 +3,7 @@ using System.IO.Enumeration;
 using System.Text.RegularExpressions;
 using McpFileInspector.Model;
 using System.Collections.Concurrent;
+using System.Text;
 
 public class FileService
 {
@@ -179,17 +180,61 @@ public class FileService
     }
 
 
-    public string ReadFile(string fullPath)
+    public async Task<string> ReadFileAsync(
+        string fullPath,
+        CancellationToken cancellationToken = default)
     {
         if (!File.Exists(fullPath))
             return "File not found.";
 
-        var content = File.ReadAllText(fullPath);
+        await using var stream = new FileStream(
+            fullPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite,
+            bufferSize: 4096,
+            useAsync: true);
 
-        if (content.Length > _maxFileSize)
-            content = content[.._maxFileSize] + "\n[Content truncated]";
+        var fileLength = stream.Length;
+        var maxBytesToRead = checked(_maxFileSize + 1);
+        var bufferSize = (int)Math.Min(fileLength, maxBytesToRead);
+        var buffer = new byte[bufferSize];
 
-        return content.Trim();
+        var totalBytesRead = 0;
+
+        while (totalBytesRead < buffer.Length)
+        {
+            var bytesRead = await stream.ReadAsync(
+                buffer.AsMemory(totalBytesRead),
+                cancellationToken);
+
+            if (bytesRead == 0)
+                break;
+
+            totalBytesRead += bytesRead;
+        }
+
+        var truncated = totalBytesRead > _maxFileSize;
+        var validBytes = truncated ? _maxFileSize : totalBytesRead;
+
+        var encoding = new UTF8Encoding(false, false);
+        var decoder = encoding.GetDecoder();
+
+        var chars = new char[encoding.GetMaxCharCount(validBytes)];
+
+        decoder.Convert(
+            buffer, 0, validBytes,
+            chars, 0, chars.Length,
+            flush: true,
+            out _,
+            out var charsUsed,
+            out _);
+
+        var content = new string(chars, 0, charsUsed);
+
+        return truncated
+            ? content + "\n[Content truncated]"
+            : content;
     }
 
     public IReadOnlyList<string> SearchFiles(string repositoryRoot, string searchPattern)

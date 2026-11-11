@@ -44,7 +44,7 @@ public class RepositoryTools : FileInspectorBaseTools
 
     [McpServerTool]
     [Description("Reads the content of a file inside a local repository.")]
-    public McpToolResponse<string> ReadFile(
+    public async Task<McpToolResponse<string>> ReadFile(
         [Description("Name of the repository to access")]
         string repositoryName,
         [Description("Relative path of the file to read")]
@@ -63,7 +63,8 @@ public class RepositoryTools : FileInspectorBaseTools
 
             if (!File.Exists(fullPath))
                 throw new FileNotFoundException("File not found.");
-            string content = _fileService.ReadFile(fullPath);
+                
+            string content = await _fileService.ReadFileAsync(fullPath);
             return ProcessSuccessResponse(content);
 
         }
