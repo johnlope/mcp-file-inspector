@@ -1,5 +1,6 @@
 using McpFileInspector.Configurations;
-using McpFileInspector.Services;
+
+namespace McpFileInspector.Services;
 
 public class PathValidator : IPathValidator
 {

@@ -3,7 +3,7 @@ using McpFileInspector.Model;
 using McpFileInspector.Services;
 using ModelContextProtocol.Server;
 
-public class RepositoryTools : FileInspectorBaseTools
+public class RepositoryTools 
 {
     private readonly IPathValidator _pathValidator;
     private readonly IFileService _fileService;
@@ -35,11 +35,11 @@ public class RepositoryTools : FileInspectorBaseTools
                 throw new DirectoryNotFoundException("Directory not found.");
 
             IReadOnlyList<string> files = _fileService.GetFilteredFiles(fullPath);
-            return ProcessSuccessResponse(files);
+            return McpResponse.Success(files);
         }
         catch (Exception ex)
         {
-            return ProcessFailedResponse<IReadOnlyList<string>>(ex);
+            return McpResponse.Fail<IReadOnlyList<string>>(ex);
         }
     }
 
@@ -73,11 +73,11 @@ public class RepositoryTools : FileInspectorBaseTools
                 ? await _fileService.ReadFileAsync(fullPath, startLine, endLine)
                 : await _fileService.ReadFileAsync(fullPath);
 
-            return ProcessSuccessResponse(result);
+            return McpResponse.Success(result);
         }
         catch (Exception ex)
         {
-            return ProcessFailedResponse<SearchResult>(ex);
+            return McpResponse.Fail<SearchResult>(ex);
         }
     }
 
@@ -105,11 +105,11 @@ public class RepositoryTools : FileInspectorBaseTools
                 throw new DirectoryNotFoundException("Directory not found.");
 
             IReadOnlyList<string> files = _fileService.SearchFiles(repositoryRoot, searchPattern);
-            return ProcessSuccessResponse(files);
+            return McpResponse.Success(files);
         }
         catch (Exception ex)
         {
-            return ProcessFailedResponse<IReadOnlyList<string>>(ex);
+            return McpResponse.Fail<IReadOnlyList<string>>(ex);
         }
     }
 
@@ -144,11 +144,11 @@ public class RepositoryTools : FileInspectorBaseTools
                 throw new DirectoryNotFoundException("Directory not found.");
 
             IReadOnlyList<SearchResult> files = await _fileService.SearchContentAsync(repositoryRoot, searchPattern, content, mode: modeCast);
-            return ProcessSuccessResponse(files);
+            return McpResponse.Success(files);
         }
         catch (Exception ex)
         {
-            return ProcessFailedResponse<IReadOnlyList<SearchResult>>(ex);
+            return McpResponse.Fail<IReadOnlyList<SearchResult>>(ex);
         }
     }
 }
