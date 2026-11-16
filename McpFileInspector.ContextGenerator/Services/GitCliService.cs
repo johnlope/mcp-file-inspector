@@ -4,7 +4,7 @@ using McpFileInspector.ContextGenerator.Models;
 
 namespace McpFileInspector.ContextGenerator.Services;
 
-public class GitCliService : IGitCliService
+public class GitCliService : IGitService
 {
     private readonly GitContextOptions gitContextOptions;
     private readonly GitProcessRunner processRunner;

@@ -3,7 +3,7 @@ using McpFileInspector.ContextGenerator.Models;
 
 namespace McpFileInspector.ContextGenerator.Abstractions;
 
-public interface IGitCliService
+public interface IGitService
 {
 	Task<IReadOnlyList<string>> LogCommitsAsync(string baseCommit, string targetCommit, CancellationToken cancellationToken = default);
 	Task<IReadOnlyList<string>> RevListAsync(string baseCommit, string targetCommit, CancellationToken cancellationToken = default);
