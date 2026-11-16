@@ -12,4 +12,8 @@ public class SearchResult
     [JsonPropertyName("content"), 
     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Content { get; init; }
+
+    [JsonPropertyName("lines"),
+    JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public (int, int) Lines { get; internal set; }
 }

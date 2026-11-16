@@ -28,6 +28,12 @@ Run MCP
 npx @modelcontextprotocol/inspector dotnet run
 ```
 
+Publicar MCP (dll)
+
+```powershell
+dotnet publish McpFileInspector.csproj -c Release -r win-x64 --self-contained false
+```
+
 Kill MCP
 
 ```powershell

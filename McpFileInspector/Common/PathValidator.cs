@@ -1,13 +1,12 @@
-using Microsoft.Extensions.Configuration;
+using McpFileInspector.Configurations;
 
 public class PathValidator
 {
     private readonly Dictionary<string, string> _allowedRoots;
 
-    public PathValidator(IConfiguration configuration)
+    public PathValidator(McpConfiguration configuration)
     {
-        _allowedRoots = configuration.GetSection("McpSettings:AllowedRoots")
-            .Get<Dictionary<string, string>>() ?? new(StringComparer.OrdinalIgnoreCase);
+        _allowedRoots = configuration.AllowedRoots ?? new(StringComparer.OrdinalIgnoreCase);
     }
 
     public string GetRepositoryRoot(string repositoryName)

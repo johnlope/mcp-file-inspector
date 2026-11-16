@@ -1,17 +1,20 @@
 using System.ComponentModel;
 using McpFileInspector.Model;
+using McpFileInspector.Services;
 using ModelContextProtocol.Server;
 
 public class RepositoryTools : FileInspectorBaseTools
 {
-    public RepositoryTools(PathValidator pathValidator, FileService fileService)
+     private readonly PathValidator _pathValidator;
+    private readonly IFileService _fileService;
+    
+    public RepositoryTools(PathValidator pathValidator, IFileService fileService)
     {
         _pathValidator = pathValidator;
         _fileService = fileService;
     }
 
-    private readonly PathValidator _pathValidator;
-    private readonly FileService _fileService;
+   
 
     [McpServerTool]
     [Description("Lists files and directories inside a local repository path.")]
@@ -44,11 +47,15 @@ public class RepositoryTools : FileInspectorBaseTools
 
     [McpServerTool]
     [Description("Reads the content of a file inside a local repository.")]
-    public async Task<McpToolResponse<string>> ReadFile(
+    public async Task<McpToolResponse<SearchResult>> ReadFile(
         [Description("Name of the repository to access")]
         string repositoryName,
         [Description("Relative path of the file to read")]
-        string relativeFilePath)
+        string relativeFilePath,
+        [Description("Optional 1-based start line number")]
+        int? startLine = null,
+        [Description("Optional 1-based end line number")]
+        int? endLine = null)
     {
         try
         {
@@ -63,14 +70,16 @@ public class RepositoryTools : FileInspectorBaseTools
 
             if (!File.Exists(fullPath))
                 throw new FileNotFoundException("File not found.");
-                
-            string content = await _fileService.ReadFileAsync(fullPath);
-            return ProcessSuccessResponse(content);
 
+            SearchResult result = startLine.HasValue || endLine.HasValue
+                ? await _fileService.ReadFileAsync(fullPath, startLine, endLine)
+                : await _fileService.ReadFileAsync(fullPath);
+
+            return ProcessSuccessResponse(result);
         }
         catch (Exception ex)
         {
-            return ProcessFailedResponse<string>(ex);
+            return ProcessFailedResponse<SearchResult>(ex);
         }
     }
 

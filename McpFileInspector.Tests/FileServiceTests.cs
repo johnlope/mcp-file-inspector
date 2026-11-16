@@ -1,3 +1,4 @@
+using McpFileInspector.Services;
 using McpFileInspector.Tests.Fixtures;
 
 namespace McpFileInspector.Tests;
@@ -9,7 +10,7 @@ public class FileServiceTests
     public FileServiceTests()
     {
         var fixture = new ConfigurationFixture();
-        _fileService = new FileService(fixture.Configuration);
+        _fileService = new FileService(fixture.CodeContextOptions, TimeProvider.System, fixture.McpConfiguration);
     }
 
     [Fact]

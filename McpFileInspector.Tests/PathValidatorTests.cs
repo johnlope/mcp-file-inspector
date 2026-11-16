@@ -10,8 +10,8 @@ public class PathValidatorTests
     
     public PathValidatorTests()
     {
-         var fixture = new ConfigurationFixture();
-        _pathValidator = new PathValidator(fixture.Configuration);
+        var fixture = new ConfigurationFixture();
+        _pathValidator = new PathValidator(fixture.McpConfiguration);
     }
 
     [Fact]
