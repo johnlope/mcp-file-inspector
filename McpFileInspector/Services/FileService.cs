@@ -178,6 +178,116 @@ public class FileService : IFileService
         return result;
     }
 
+    public async Task<FileOutlineResult> GetFileOutlineAsync(string fullPath, CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"The file '{fullPath}' does not exist.");
+
+        string filePath = Path.GetFileName(fullPath);
+
+        if (TryBeginCall() is { } limit)
+        {
+            return new FileOutlineResult(filePath, 0, []);
+        }
+
+        var ext = Path.GetExtension(fullPath).ToLowerInvariant();
+        var symbols = new List<FileSymbol>();
+        int lineNumber = 0;
+
+        using (var reader = new StreamReader(fullPath, Encoding.UTF8))
+        {
+            while (await reader.ReadLineAsync(cancellationToken) is { } line)
+            {
+                lineNumber++;
+                var trimmed = line.Trim();
+                if (string.IsNullOrWhiteSpace(trimmed)) continue;
+
+                FileSymbol? symbol = ext switch
+                {
+                    ".cs" => ParseCSharpSymbol(trimmed, lineNumber),
+                    ".sql" => ParseSqlSymbol(trimmed, lineNumber),
+                    ".js" or ".ts" => ParseJsTsSymbol(trimmed, lineNumber),
+                    _ => null
+                };
+
+                if (symbol != null)
+                {
+                    symbols.Add(symbol);
+                }
+            }
+        }
+
+        Record(new CodeQueryRecord("GetFileOutline", filePath, 1, lineNumber));
+        return new FileOutlineResult(filePath, lineNumber, symbols);
+    }
+
+    public SessionSummary GetSessionSummary()
+    {
+        lock (gate)
+        {
+            var elapsed = timeProvider.GetElapsedTime(startedAt).TotalSeconds;
+            return new SessionSummary(calls, bytes, elapsed, queries.ToList());
+        }
+    }
+
+    private static FileSymbol? ParseCSharpSymbol(string line, int lineNumber)
+    {
+        if (line.StartsWith("//") || line.StartsWith("/*") || line.StartsWith("*")) return null;
+
+        var match = Regex.Match(line, @"\b(class|interface|struct|enum|record)\s+([A-Za-z0-9_]+)", RegexOptions.Compiled);
+        if (match.Success)
+        {
+            return new FileSymbol(match.Groups[1].Value, match.Groups[2].Value, lineNumber, line);
+        }
+
+        // Métodos o funciones C# (visibilidad + tipo retorno + nombre + paréntesis)
+        var methodMatch = Regex.Match(line, @"\b(public|private|protected|internal|static|async|override|virtual)\s+[\w\<\>\[\]\?,\s]+\s+([A-Za-z0-9_]+)\s*\(", RegexOptions.Compiled);
+        if (methodMatch.Success && !line.Contains("=") && !line.Contains(" new "))
+        {
+            return new FileSymbol("method", methodMatch.Groups[2].Value, lineNumber, line);
+        }
+
+        return null;
+    }
+
+    private static FileSymbol? ParseSqlSymbol(string line, int lineNumber)
+    {
+        if (line.StartsWith("--") || line.StartsWith("/*")) return null;
+
+        var match = Regex.Match(line, @"\b(CREATE|ALTER)\s+(PROCEDURE|PROC|FUNCTION|VIEW|TABLE)\s+([\[\]\w\.]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        if (match.Success)
+        {
+            return new FileSymbol(match.Groups[2].Value.ToUpperInvariant(), match.Groups[3].Value.Replace("[", "").Replace("]", ""), lineNumber, line);
+        }
+
+        return null;
+    }
+
+    private static FileSymbol? ParseJsTsSymbol(string line, int lineNumber)
+    {
+        if (line.StartsWith("//") || line.StartsWith("/*") || line.StartsWith("*")) return null;
+
+        var classMatch = Regex.Match(line, @"\bclass\s+([A-Za-z0-9_]+)", RegexOptions.Compiled);
+        if (classMatch.Success)
+        {
+            return new FileSymbol("class", classMatch.Groups[1].Value, lineNumber, line);
+        }
+
+        var funcMatch = Regex.Match(line, @"\bfunction\s+([A-Za-z0-9_]+)\s*\(", RegexOptions.Compiled);
+        if (funcMatch.Success)
+        {
+            return new FileSymbol("function", funcMatch.Groups[1].Value, lineNumber, line);
+        }
+
+        var arrowOrMethod = Regex.Match(line, @"\b(const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>", RegexOptions.Compiled);
+        if (arrowOrMethod.Success)
+        {
+            return new FileSymbol("function", arrowOrMethod.Groups[2].Value, lineNumber, line);
+        }
+
+        return null;
+    }
+
     public IReadOnlyList<string> SearchFiles(string repositoryRoot, string searchPattern)
     {
         if (!Directory.Exists(repositoryRoot))

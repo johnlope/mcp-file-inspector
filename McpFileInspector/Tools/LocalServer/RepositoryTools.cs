@@ -67,12 +67,14 @@ public class RepositoryTools
         [Description("Name of the repository to access")]
         string repositoryName,
         [Description("Search pattern for files (e.g., *.txt, Program.cs, *Service.cs, Program.*)")]
-        string searchPattern
+        string searchPattern,
+        [Description("Optional subdirectory within the repository to search in")]
+        string? subDirectory = null
     )
     {
         try
         {
-            string repositoryRoot = _pathValidator.ValidateAndResolvePath(repositoryName,  relativePath:"");
+            string repositoryRoot = _pathValidator.ValidateAndResolvePath(repositoryName,  subDirectory ?? string.Empty);
             
             IReadOnlyList<string> files = _fileService.SearchFiles(repositoryRoot, searchPattern);
             return McpResponse.Success(files);
@@ -109,6 +111,26 @@ public class RepositoryTools
         catch (Exception ex)
         {
             return McpResponse.Fail<IReadOnlyList<SearchResult>>(ex);
+        }
+    }
+
+    [McpServerTool]
+    [Description("Gets an outline of classes, methods, stored procedures and functions with their line numbers in a file without returning full content.")]
+    public async Task<McpToolResponse<FileOutlineResult>> GetFileOutline(
+        [Description("Name of the repository to access")]
+        string repositoryName,
+        [Description("Relative path of the file to inspect (e.g. Models/Order.cs, Procedures/SaveInvoice.sql)")]
+        string relativeFilePath)
+    {
+        try
+        {
+            string fullPath = _pathValidator.ValidateAndResolvePath(repositoryName, relativeFilePath);
+            FileOutlineResult outline = await _fileService.GetFileOutlineAsync(fullPath);
+            return McpResponse.Success(outline);
+        }
+        catch (Exception ex)
+        {
+            return McpResponse.Fail<FileOutlineResult>(ex);
         }
     }
 }
