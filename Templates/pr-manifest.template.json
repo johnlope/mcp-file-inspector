@@ -34,8 +34,7 @@
       "status": "modified",
       "language": "csharp",
       "additions": 2,
-      "deletions": 0,
-      "requiresDeepInspection": false,
+      "deletions": 0,      
       "patch": "@@ -345,6 +345,8 @@ namespace WebFlowers.Application.Logistics\n         DataTable GetRFIDEnabledFarms();\n         #endregion\n+\n+        string PrintLabelOfInvoiceLines(string dtInvoiceLines);\n     }\n }"
     },
     {
@@ -44,8 +43,7 @@
       "status": "modified",
       "language": "csharp",
       "additions": 18,
-      "deletions": 2,
-      "requiresDeepInspection": true,
+      "deletions": 2,      
       "patch": "@@ -810,6 +810,22 @@ namespace WebFlowers.Application.Logistics\n         }\n+\n+        public string PrintLabelOfInvoiceLines(string dtInvoiceLines)\n+        {\n+            if (string.IsNullOrWhiteSpace(dtInvoiceLines))\n+                throw new ArgumentException(\"Invoice lines cannot be empty\", nameof(dtInvoiceLines));\n+\n+            return _dataManagerProcurement.GenerateInvoiceLabels(dtInvoiceLines);\n+        }\n     }\n }"
     },
     {
@@ -54,8 +52,7 @@
       "status": "modified",
       "language": "sql",
       "additions": 8,
-      "deletions": 2,
-      "requiresDeepInspection": false,
+      "deletions": 2,      
       "patch": "@@ -40,7 +40,13 @@ CREATE PROCEDURE [TruckReservation].[SaveInvoice]\n     @InvoiceNumber VARCHAR(50),\n+    @LabelStatus VARCHAR(20) = 'PENDING'\n AS\n BEGIN\n     SET NOCOUNT ON;\n+    UPDATE [TruckReservation].[tblInvoices]\n+    SET [Status] = @LabelStatus\n+    WHERE [InvoiceNumber] = @InvoiceNumber;\n END"
     }
   ],  
