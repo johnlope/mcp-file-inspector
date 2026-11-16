@@ -21,20 +21,10 @@ public class RepositoryTools
         string repositoryName)
     {
         try
-        {
-            string repositoryRoot = _pathValidator.GetRepositoryRoot(repositoryName);
+        {           
+            string repositoryRoot = _pathValidator.ValidateAndResolvePath(repositoryName,  relativePath:"");           
 
-            var fullPath = Path.GetFullPath(Path.Combine(repositoryRoot));
-
-            if (!fullPath.StartsWith(Path.GetFullPath(repositoryRoot), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("Path is outside the repository.");
-            }
-
-            if (!Directory.Exists(fullPath))
-                throw new DirectoryNotFoundException("Directory not found.");
-
-            IReadOnlyList<string> files = _fileService.GetFilteredFiles(fullPath);
+            IReadOnlyList<string> files = _fileService.GetFilteredFiles(repositoryRoot);
             return McpResponse.Success(files);
         }
         catch (Exception ex)
@@ -56,18 +46,8 @@ public class RepositoryTools
         int? endLine = null)
     {
         try
-        {
-            string repositoryRoot = _pathValidator.GetRepositoryRoot(repositoryName);
-
-            var fullPath = Path.GetFullPath(Path.Combine(repositoryRoot, relativeFilePath));
-
-            if (!fullPath.StartsWith(Path.GetFullPath(repositoryRoot), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("Path is outside the repository.");
-            }
-
-            if (!File.Exists(fullPath))
-                throw new FileNotFoundException("File not found.");
+        {            
+            string fullPath = _pathValidator.ValidateAndResolvePath(repositoryName, relativeFilePath);            
 
             SearchResult result = startLine.HasValue || endLine.HasValue
                 ? await _fileService.ReadFileAsync(fullPath, startLine, endLine)
@@ -92,18 +72,8 @@ public class RepositoryTools
     {
         try
         {
-            string repositoryRoot = _pathValidator.GetRepositoryRoot(repositoryName);
-
-            var fullPath = Path.GetFullPath(Path.Combine(repositoryRoot, searchPattern));
-
-            if (!fullPath.StartsWith(Path.GetFullPath(repositoryRoot), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("Path is outside the repository.");
-            }
-
-            if (!Directory.Exists(repositoryRoot))
-                throw new DirectoryNotFoundException("Directory not found.");
-
+            string repositoryRoot = _pathValidator.ValidateAndResolvePath(repositoryName,  relativePath:"");
+            
             IReadOnlyList<string> files = _fileService.SearchFiles(repositoryRoot, searchPattern);
             return McpResponse.Success(files);
         }
@@ -127,21 +97,11 @@ public class RepositoryTools
     )
     {
         try
-        {
-            string repositoryRoot = _pathValidator.GetRepositoryRoot(repositoryName);
-
-            var fullPath = Path.GetFullPath(Path.Combine(repositoryRoot, searchPattern));
-
-            if (!fullPath.StartsWith(Path.GetFullPath(repositoryRoot), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("Path is outside the repository.");
-            }
+        {            
+            string repositoryRoot = _pathValidator.ValidateAndResolvePath(repositoryName,  relativePath:"");            
 
             if (Enum.TryParse<SearchMode>(mode, true, out var modeCast) == false)
                 throw new ArgumentException("Invalid search mode.");
-
-            if (!Directory.Exists(repositoryRoot))
-                throw new DirectoryNotFoundException("Directory not found.");
 
             IReadOnlyList<SearchResult> files = await _fileService.SearchContentAsync(repositoryRoot, searchPattern, content, mode: modeCast);
             return McpResponse.Success(files);

@@ -24,4 +24,21 @@ public class PathValidator : IPathValidator
 
         return _allowedRoots[repositoryName];
     }
+
+    public string ValidateAndResolvePath(string repositoryName, string relativePath)
+    {
+        var repositoryRoot = Path.GetFullPath(GetRepositoryRoot(repositoryName));
+        var fullPath = Path.GetFullPath(Path.Combine(repositoryRoot, relativePath ?? string.Empty));
+
+        // Validar escape de directorio
+        if (!fullPath.StartsWith(repositoryRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new UnauthorizedAccessException("Path is outside the repository boundaries.");
+        }
+
+        if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
+            throw new FileNotFoundException($"Path not found: {fullPath}");
+
+        return fullPath;
+    }
 }
