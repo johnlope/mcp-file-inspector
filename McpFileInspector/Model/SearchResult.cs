@@ -15,5 +15,5 @@ public class SearchResult
 
     [JsonPropertyName("lines"),
     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public (int, int) Lines { get; internal set; }
+    public (int, int)? Lines { get; internal set; }
 }

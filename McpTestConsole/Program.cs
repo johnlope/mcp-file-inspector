@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
-using Azure;
-using Azure.AI.OpenAI;
+using OpenAI;
+using System.ClientModel;
 
 class Program
 {
@@ -10,8 +10,8 @@ class Program
     {
         Console.WriteLine("=== Iniciando cliente de prueba MCP (stdio) ===");
 
-        // Ruta a la DLL compilada de tu servidor MCP
-        var serverDllPath = @"C:\Personal\mcp-file-inspector\McpFileInspector\bin\Debug\net10.0\win-x64\McpFileInspector.dll";
+        // Ruta al ensamblado del servidor MCP resuelta dinámicamente
+        var serverDllPath = typeof(McpFileInspector.Services.FileService).Assembly.Location;
 
         // Configurar el transporte Stdio
         var transport = new StdioClientTransport(new StdioClientTransportOptions
@@ -66,16 +66,17 @@ class Program
             .Cast<AITool>()
             .ToList();
 
-        // 2. Credenciales y Endpoint con API Key
+        // 2. Credenciales y Endpoint con API Key (Gateway /openai/v1 de Azure Foundry)
         var endpoint = new Uri("https://<your-endpoint>.openai.azure.com/");
         var apiKey = "<your-api-key>";
-        var credential = new AzureKeyCredential(apiKey);
 
-        // 3. Crear cliente con AzureKeyCredential
-        AzureOpenAIClient azureClient = new(endpoint, credential);
+
+        // 3. Crear cliente OpenAI estándar apuntando al Endpoint de Foundry
+        var openAiOptions = new OpenAIClientOptions { Endpoint = endpoint };
+        OpenAIClient openAiClient = new(new ApiKeyCredential(apiKey), openAiOptions);
 
         // 4. Crear IChatClient con invocación automática de funciones/tools
-        IChatClient chatClient = azureClient
+        IChatClient chatClient = openAiClient
             .GetChatClient("gpt-4.1-mini") // Nombre de tu deployment en Foundry
             .AsIChatClient()
             .AsBuilder()
@@ -84,11 +85,20 @@ class Program
 
         List<ChatMessage> messages =
         [
-            new(ChatRole.System, "Eres un asistente técnico con acceso a herramientas locales para inspeccionar código. " +
-                         "Los repositorios disponibles para el parámetro 'repositoryName' son: 'GHT-Reviews'. " +
-                         "Si el usuario no especifica uno, utiliza 'GHT-Reviews' por defecto."),
-            new(ChatRole.User, "Busca archivos de configuración en el proyecto"),
-            new(ChatRole.User, "Si encuentras el archivo reviews.json valida que no tenga claves sensibles y muestra su contenido si no las tiene")
+            new(ChatRole.System,
+                "Eres un revisor de código senior especializado en bases de datos y arquitectura limpia.\n" +
+                "Tienes acceso a herramientas MCP locales para explorar el repositorio.\n" +
+                "Reglas obligatorias:\n" +
+                "1. El nombre del repositorio a consultar siempre es 'GHT-WF'.\n" +
+                "2. ANTES de dar cualquier opinión o recomendación, es obligatorio que uses las herramientas para localizar y leer el código fuente completo de los archivos.\n" +
+                "3. Basa tus críticas únicamente en el código real leído, no en suposiciones.\n" +
+                "4. Evalúa mantenibilidad, duplicidad, rendimiento y viabilidad de unificación."),
+
+            new(ChatRole.User,
+                "Localiza en el repositorio los archivos 'GenerateKruegerLabels.sql' y 'GenerateKruegerReport.sql'. " +
+                "Lee el contenido de ambos procedimientos y realiza un análisis técnico comparativo: " +
+                "¿comparten lógica duplicada?, ¿qué mejoras de rendimiento o buenas prácticas sugieres?, y " +
+                "¿es viable y recomendable unificarlos en un único procedimiento almacenado? Justifica con base en el código.")
         ];
 
         Console.WriteLine("\n[5] Probando ejecución del modelo con las herramientas MCP");
@@ -98,7 +108,7 @@ class Program
             messages,
             new ChatOptions
             {
-                Tools = aiTools 
+                Tools = aiTools
             });
 
         Console.WriteLine($"\n[ASSISTANT]: {response.Text}");

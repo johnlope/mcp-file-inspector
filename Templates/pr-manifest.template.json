@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0",
+  "generatedAt": "2026-11-16T12:00:00Z",
+  "pullRequest": {
+    "id": 1042,
+    "title": "Add invoice label printing and support logistics route updates",
+    "description": "Exposes PrintLabelOfInvoiceLines in ILogisticsService and adds supporting stored procedures in TruckReservation.",
+    "author": "john.lope",
+    "team": "C5",
+    "sourceBranch": "feature/invoice-labels",
+    "targetBranch": "main",
+    "baseCommit": "09f73b59a4746a984ebbf2cd0cb68a14fc48df4b",
+    "targetCommit": "55e51703f70266fe2c12217c03000a598c72ad69",
+    "commits": [
+      "55e51703f70266fe2c12217c03000a598c72ad69"
+    ]
+  },
+  "summary": {
+    "totalFilesChanged": 3,
+    "totalAdditions": 28,
+    "totalDeletions": 4,
+    "modulesChanged": [
+      "WebFlowers.Application.Logistics",
+      "DataBase/WebFlowers/Schema Objects/Schemas"
+    ],
+    "hasDatabaseChanges": true,
+    "hasBreakingChangesCandidate": false
+  },
+  "files": [
+    {
+      "path": "WebFlowers.Application.Logistics/ILogisticsService.cs",
+      "module": "WebFlowers.Application.Logistics",
+      "status": "modified",
+      "language": "csharp",
+      "additions": 2,
+      "deletions": 0,
+      "requiresDeepInspection": false,
+      "patch": "@@ -345,6 +345,8 @@ namespace WebFlowers.Application.Logistics\n         DataTable GetRFIDEnabledFarms();\n         #endregion\n+\n+        string PrintLabelOfInvoiceLines(string dtInvoiceLines);\n     }\n }"
+    },
+    {
+      "path": "WebFlowers.Application.Logistics/LogisticsService.cs",
+      "module": "WebFlowers.Application.Logistics",
+      "status": "modified",
+      "language": "csharp",
+      "additions": 18,
+      "deletions": 2,
+      "requiresDeepInspection": true,
+      "patch": "@@ -810,6 +810,22 @@ namespace WebFlowers.Application.Logistics\n         }\n+\n+        public string PrintLabelOfInvoiceLines(string dtInvoiceLines)\n+        {\n+            if (string.IsNullOrWhiteSpace(dtInvoiceLines))\n+                throw new ArgumentException(\"Invoice lines cannot be empty\", nameof(dtInvoiceLines));\n+\n+            return _dataManagerProcurement.GenerateInvoiceLabels(dtInvoiceLines);\n+        }\n     }\n }"
+    },
+    {
+      "path": "DataBase/WebFlowers/Schema Objects/Schemas/TruckReservation/Programmability/Stored Procedures/SaveInvoice.sql",
+      "module": "DataBase/WebFlowers/Schema Objects/Schemas",
+      "status": "modified",
+      "language": "sql",
+      "additions": 8,
+      "deletions": 2,
+      "requiresDeepInspection": false,
+      "patch": "@@ -40,7 +40,13 @@ CREATE PROCEDURE [TruckReservation].[SaveInvoice]\n     @InvoiceNumber VARCHAR(50),\n+    @LabelStatus VARCHAR(20) = 'PENDING'\n AS\n BEGIN\n     SET NOCOUNT ON;\n+    UPDATE [TruckReservation].[tblInvoices]\n+    SET [Status] = @LabelStatus\n+    WHERE [InvoiceNumber] = @InvoiceNumber;\n END"
+    }
+  ],  
+  "reviewDirectives": {
+    "focusAreas": [
+      "SQL parameter injection and transaction safety",
+      "Null checks on public service contracts",
+      "Breaking changes in interface signatures"
+    ],
+    "instructionsForLlm": "Review the patch first. If context around _dataManagerProcurement.GenerateInvoiceLabels or schema tables is needed, call McpReadFileAsync with startLine and endLine."
+  }
+}
