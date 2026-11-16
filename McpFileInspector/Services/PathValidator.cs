@@ -1,6 +1,7 @@
 using McpFileInspector.Configurations;
+using McpFileInspector.Services;
 
-public class PathValidator
+public class PathValidator : IPathValidator
 {
     private readonly Dictionary<string, string> _allowedRoots;
 

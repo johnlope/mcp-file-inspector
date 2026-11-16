@@ -1,4 +1,5 @@
 using System;
+using McpFileInspector.Services;
 using McpFileInspector.Tests.Fixtures;
 using Xunit;
 
@@ -6,7 +7,7 @@ namespace McpFileInspector.Tests;
 
 public class PathValidatorTests
 {
-    private readonly PathValidator _pathValidator;
+    private readonly IPathValidator _pathValidator;
     
     public PathValidatorTests()
     {

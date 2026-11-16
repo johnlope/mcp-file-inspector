@@ -5,16 +5,14 @@ using ModelContextProtocol.Server;
 
 public class RepositoryTools : FileInspectorBaseTools
 {
-     private readonly PathValidator _pathValidator;
+    private readonly IPathValidator _pathValidator;
     private readonly IFileService _fileService;
-    
-    public RepositoryTools(PathValidator pathValidator, IFileService fileService)
+
+    public RepositoryTools(IPathValidator pathValidator, IFileService fileService)
     {
         _pathValidator = pathValidator;
         _fileService = fileService;
     }
-
-   
 
     [McpServerTool]
     [Description("Lists files and directories inside a local repository path.")]
@@ -140,7 +138,7 @@ public class RepositoryTools : FileInspectorBaseTools
             }
 
             if (Enum.TryParse<SearchMode>(mode, true, out var modeCast) == false)
-                throw new ArgumentException("Invalid search mode.");            
+                throw new ArgumentException("Invalid search mode.");
 
             if (!Directory.Exists(repositoryRoot))
                 throw new DirectoryNotFoundException("Directory not found.");

@@ -29,7 +29,7 @@ builder.Services.AddSingleton(codeContextOptions);
 builder.Services.AddSingleton(mcpConfig);
 builder.Services.AddSingleton(TimeProvider.System);
 
-builder.Services.AddSingleton<PathValidator>();
+builder.Services.AddSingleton<IPathValidator, PathValidator>();
 builder.Services.AddSingleton<IFileService, FileService>();
 
 await builder.Build().RunAsync();
