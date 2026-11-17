@@ -14,7 +14,7 @@ public class ContextBuilder : IContextBuilder
         this.filterService = filterService;
     }
 
-    public async Task<ReviewManifest> BuildReviewManifestAsync(string baseCommit, string targetCommit, CancellationToken cancellationToken = default)
+    public async Task<ReviewManifest> BuildReviewManifestAsync(string baseCommit, string targetCommit, ReviewSpecialty specialty = ReviewSpecialty.All, CancellationToken cancellationToken = default)
     {
         IReadOnlyList<string> commits = await gitService.LogCommitsAsync(baseCommit, targetCommit, cancellationToken);
         IReadOnlyList<GitFile> filesChanged = await gitService.DiffNameStatusAsync(baseCommit, targetCommit, cancellationToken);
@@ -35,6 +35,13 @@ public class ContextBuilder : IContextBuilder
             .Where(file => !string.IsNullOrWhiteSpace(file.Path))
             .Where(async (file, cancellationToken) => await filterService.FilterAsync(file.Path!, cancellationToken))
             .ToListAsync();
+
+        if (specialty != ReviewSpecialty.All)
+        {
+            filteredFiles = filteredFiles
+                .Where(file => LanguageDetector.DetectSpecialty(file.Path!) == specialty)
+                .ToList();
+        }
 
         IReadOnlyList<string> modulesChanged = filteredFiles
             .Select(f => f.Path!.Contains('/') ? f.Path.Split('/')[0] : "(root)")
@@ -73,6 +80,7 @@ public class ContextBuilder : IContextBuilder
         foreach (var file in filteredFiles)
         {
             file.Language = LanguageDetector.Detect(file.Path!);
+            file.Specialty = LanguageDetector.DetectSpecialty(file.Path!)?.ToString();
 
             if (changesByPath.TryGetValue(file.Path!, out GitFile? summary) && summary != null)
             {

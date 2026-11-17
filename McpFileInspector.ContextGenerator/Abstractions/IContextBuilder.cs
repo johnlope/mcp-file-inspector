@@ -5,5 +5,5 @@ namespace McpFileInspector.ContextGenerator.Abstractions;
 
 public interface IContextBuilder
 {
-    Task<ReviewManifest> BuildReviewManifestAsync(string baseCommit, string targetCommit, CancellationToken cancellationToken = default);
+    Task<ReviewManifest> BuildReviewManifestAsync(string baseCommit, string targetCommit, ReviewSpecialty specialty = ReviewSpecialty.All, CancellationToken cancellationToken = default);
 }

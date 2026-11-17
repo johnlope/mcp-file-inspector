@@ -20,6 +20,10 @@ public class GitFile
     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Language { get; set; }
 
+    [JsonPropertyName("specialty"), 
+    JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Specialty { get; set; }
+
     [JsonPropertyName("additions"), 
     JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? Additions { get; set; }

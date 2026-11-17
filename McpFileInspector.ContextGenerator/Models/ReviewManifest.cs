@@ -1,4 +1,3 @@
-using System;
 using System.Text.Json.Serialization;
 
 namespace McpFileInspector.ContextGenerator.Models;
@@ -20,9 +19,14 @@ public class ReviewManifest
 
     [JsonPropertyName("files")]
     public IReadOnlyList<GitFile> Files { get; init; } = [];
+
+    [JsonPropertyName("isReviewable")]
+    public bool IsReviewable => Files != null && Files.Count > 0;
+
+    [JsonPropertyName("skipReason"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SkipReason => !IsReviewable ? "No reviewable code files found for the requested specialty." : null;
 }
 
-// Root myDeserializedClass = JsonSerializer.Deserialize<Root>(myJsonResponse);
 public class ChangeSet
 {
     [JsonPropertyName("team")]

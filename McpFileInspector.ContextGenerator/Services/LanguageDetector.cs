@@ -1,31 +1,33 @@
 using System;
+using McpFileInspector.ContextGenerator.Models;
 
 namespace McpFileInspector.ContextGenerator.Services;
 
 public static class LanguageDetector
 {
-    private static readonly Dictionary<string, string> ExtensionMap = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, (string Language, ReviewSpecialty Specialty)> ExtensionMap = new(StringComparer.OrdinalIgnoreCase)
     {
-        [".cs"] = "csharp",
-        [".sql"] = "sql",
-        [".js"] = "javascript",
-        [".ts"] = "typescript",
-        [".jsx"] = "javascript",
-        [".tsx"] = "typescript",
-        [".vb"] = "vbnet",
-        [".aspx"] = "aspx",
-        [".ascx"] = "aspx",
-        [".html"] = "html",
-        [".htm"] = "html",
-        [".css"] = "css",
-        [".scss"] = "scss",
-        [".json"] = "json",
-        [".xml"] = "xml",
-        [".yaml"] = "yaml",
-        [".yml"] = "yaml",
-        [".md"] = "markdown",
-        [".sh"] = "bash",
-        [".ps1"] = "powershell"
+        // Backend
+        [".cs"] = ("csharp", ReviewSpecialty.Backend),
+        [".vb"] = ("vbnet", ReviewSpecialty.Backend),
+        [".fs"] = ("fsharp", ReviewSpecialty.Backend),
+
+        // Database
+        [".sql"] = ("sql", ReviewSpecialty.Database),
+
+        // UI / Web Forms / Frontend
+        [".aspx"] = ("aspx", ReviewSpecialty.UI),
+        [".ascx"] = ("aspx", ReviewSpecialty.UI),
+        [".master"] = ("aspx", ReviewSpecialty.UI),
+        [".razor"] = ("razor", ReviewSpecialty.UI),
+        [".html"] = ("html", ReviewSpecialty.UI),
+        [".htm"] = ("html", ReviewSpecialty.UI),
+        [".js"] = ("javascript", ReviewSpecialty.UI),
+        [".ts"] = ("typescript", ReviewSpecialty.UI),
+        [".jsx"] = ("javascript", ReviewSpecialty.UI),
+        [".tsx"] = ("typescript", ReviewSpecialty.UI),
+        [".css"] = ("css", ReviewSpecialty.UI),
+        [".scss"] = ("scss", ReviewSpecialty.UI)
     };
 
     public static string Detect(string filePath)
@@ -33,6 +35,14 @@ public static class LanguageDetector
         var ext = Path.GetExtension(filePath);
         if (string.IsNullOrEmpty(ext)) return "plaintext";
 
-        return ExtensionMap.TryGetValue(ext, out var lang) ? lang : "plaintext";
+        return ExtensionMap.TryGetValue(ext, out var info) ? info.Language : "plaintext";
+    }
+
+    public static ReviewSpecialty? DetectSpecialty(string filePath)
+    {
+        var ext = Path.GetExtension(filePath);
+        if (string.IsNullOrEmpty(ext)) return null;
+
+        return ExtensionMap.TryGetValue(ext, out var info) ? info.Specialty : null;
     }
 }
