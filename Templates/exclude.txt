@@ -1,0 +1,11 @@
+*.Designer.cs
+*.designer.cs
+*.generated.cs
+*.min.js
+*.min.css
+*/bin/*
+*/obj/*
+*/Datasets/*
+*/Migrations/*
+*Reference.cs
+*.resx

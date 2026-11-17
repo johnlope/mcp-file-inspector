@@ -2,16 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "version": "1.0",
   "generatedAt": "2026-11-16T12:00:00Z",
-  "pullRequest": {
-    "id": 1042,
-    "title": "Add invoice label printing and support logistics route updates",
-    "description": "Exposes PrintLabelOfInvoiceLines in ILogisticsService and adds supporting stored procedures in TruckReservation.",
-    "author": "john.lope",
+  "changeSet": {
     "team": "C5",
-    "sourceBranch": "feature/invoice-labels",
-    "targetBranch": "main",
+    "repository": "GHT-Reviews",
     "baseCommit": "09f73b59a4746a984ebbf2cd0cb68a14fc48df4b",
     "targetCommit": "55e51703f70266fe2c12217c03000a598c72ad69",
+    "description": "Corte de integración para revisión de cambios del equipo C5",
     "commits": [
       "55e51703f70266fe2c12217c03000a598c72ad69"
     ]
@@ -60,8 +56,8 @@
     "focusAreas": [
       "SQL parameter injection and transaction safety",
       "Null checks on public service contracts",
-      "Breaking changes in interface signatures"
+      "Contract and database compatibility across teams"
     ],
-    "instructionsForLlm": "Review the patch first. If context around _dataManagerProcurement.GenerateInvoiceLabels or schema tables is needed, call McpReadFileAsync with startLine and endLine."
+    "instructionsForLlm": "Review the patch first. If context around modified symbols or schema tables is needed, call McpReadFileAsync with startLine and endLine."
   }
 }
